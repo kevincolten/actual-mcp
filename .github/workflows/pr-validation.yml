@@ -26,8 +26,12 @@ jobs:
           node-version: 24
           cache: 'npm'
 
+      # Reason: the committed lockfile is generated on macOS/arm64, where npm does
+      # not install the wasm32-wasi binding and so never records its nested
+      # @emnapi dependencies. `npm ci` on Linux/npm 11 rejects that lockfile as
+      # out of sync, so dependencies are resolved at install time instead.
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Build TypeScript
         run: npm run build
@@ -61,7 +65,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Type check
         run: npx tsc --noEmit
@@ -104,7 +108,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Run quality checks
         run: npm run quality
