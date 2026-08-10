@@ -21,6 +21,7 @@ The Actual Budget MCP Server allows you to interact with your personal financial
 - **`get-transactions`** - Retrieve and filter transactions by account, date, amount, category, or payee
 - **`create-transaction`** - Create a new transaction in an account with optional category, payee, and notes
 - **`update-transaction`** - Update an existing transaction with new category, payee, notes, or amount
+- **`bulk-categorize-transactions`** - Categorize many transactions at once via explicit assignments or payee-matching patterns (previews by default)
 - **`get-accounts`** - Retrieve a list of all accounts with their current balance and ID
 - **`balance-history`** - View account balance changes over time
 
@@ -114,6 +115,10 @@ export ACTUAL_PASSWORD="your-password"
 
 # Specific budget to use (optional)
 export ACTUAL_BUDGET_SYNC_ID="your-budget-id"
+
+# How long downloaded data stays fresh before the server re-syncs, in ms
+# (default: 60000). Use 0 to sync before every call, or -1 to never sync.
+export ACTUAL_SYNC_TTL_MS="60000"
 ```
 
 Optional: separate encryption budget password
