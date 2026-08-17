@@ -33,6 +33,8 @@ import * as createTransaction from './create-transaction/index.js';
 import * as importTransactions from './import-transactions/index.js';
 import * as runBankSync from './run-bank-sync/index.js';
 import * as bulkCategorizeTransactions from './bulk-categorize-transactions/index.js';
+import * as getBudgetMonth from './budget/get-budget-month/index.js';
+import * as setBudgetAmount from './budget/set-budget-amount/index.js';
 
 const readTools = [
   getTransactions,
@@ -43,6 +45,7 @@ const readTools = [
   getGroupedCategories,
   getPayees,
   getRules,
+  getBudgetMonth,
 ];
 
 const writeTools = [
@@ -64,6 +67,7 @@ const writeTools = [
   importTransactions,
   runBankSync,
   bulkCategorizeTransactions,
+  setBudgetAmount,
 ];
 
 export const setupTools = (server: Server, enableWrite: boolean): void => {
