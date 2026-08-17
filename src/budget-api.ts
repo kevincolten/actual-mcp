@@ -30,11 +30,14 @@ export async function getBudgetMonth(month: string): Promise<unknown> {
 /**
  * Set the budgeted amount for a category in a month (ensures API is initialized)
  *
+ * Reason: the published docs describe these as returning Promise<null>, but the
+ * shipped type declarations resolve to void — so the wrappers follow the types.
+ *
  * @param month - Budget month in YYYY-MM format
  * @param categoryId - Category ID (UUID)
  * @param value - Amount in INTEGER CENTS ($120.30 => 12030)
  */
-export async function setBudgetAmount(month: string, categoryId: string, value: number): Promise<null> {
+export async function setBudgetAmount(month: string, categoryId: string, value: number): Promise<void> {
   await initActualApi();
   return api.setBudgetAmount(month, categoryId, value);
 }
@@ -42,7 +45,7 @@ export async function setBudgetAmount(month: string, categoryId: string, value: 
 /**
  * Toggle rollover ("carryover") of a category's balance into the next month.
  */
-export async function setBudgetCarryover(month: string, categoryId: string, flag: boolean): Promise<null> {
+export async function setBudgetCarryover(month: string, categoryId: string, flag: boolean): Promise<void> {
   await initActualApi();
   return api.setBudgetCarryover(month, categoryId, flag);
 }
