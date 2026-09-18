@@ -15,10 +15,9 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import dotenv from 'dotenv';
-import express, { NextFunction, Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { randomUUID } from 'node:crypto';
 import { parseArgs } from 'node:util';
-import { isValidBearerToken } from './utils/bearer-auth.js';
 import { initActualApi, shutdownActualApi } from './actual-api.js';
 import { fetchAllAccounts } from './core/data/fetch-accounts.js';
 import { createServer } from './server.js';
@@ -32,7 +31,6 @@ const {
   values: {
     sse: useSse,
     'enable-write': enableWrite,
-    'enable-bearer': enableBearer,
     port,
     'test-resources': testResources,
     'test-custom': testCustom,
@@ -41,7 +39,6 @@ const {
   options: {
     sse: { type: 'boolean', default: false },
     'enable-write': { type: 'boolean', default: false },
-    'enable-bearer': { type: 'boolean', default: false },
     port: { type: 'string' },
     'test-resources': { type: 'boolean', default: false },
     'test-custom': { type: 'boolean', default: false },
@@ -50,50 +47,6 @@ const {
 });
 
 const resolvedPort = port ? parseInt(port, 10) : 3000;
-
-// Bearer authentication middleware
-const bearerAuth = (req: Request, res: Response, next: NextFunction): void => {
-  if (!enableBearer) {
-    next();
-    return;
-  }
-
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    res.status(401).json({
-      error: 'Authorization header required',
-    });
-    return;
-  }
-
-  if (!authHeader.startsWith('Bearer ')) {
-    res.status(401).json({
-      error: "Authorization header must start with 'Bearer '",
-    });
-    return;
-  }
-
-  const token = authHeader.substring(7); // Remove "Bearer " prefix
-  const expectedToken = process.env.BEARER_TOKEN;
-
-  if (!expectedToken) {
-    console.error('BEARER_TOKEN environment variable not set');
-    res.status(500).json({
-      error: 'Server configuration error',
-    });
-    return;
-  }
-
-  if (!isValidBearerToken(token, expectedToken)) {
-    res.status(401).json({
-      error: 'Invalid bearer token',
-    });
-    return;
-  }
-
-  next();
-};
 
 /**
  * Safely stringify values for logging without throwing on circular structures.
@@ -163,13 +116,6 @@ async function main(): Promise<void> {
     const app = express();
     app.use(express.json());
 
-    // Log bearer auth status
-    if (enableBearer) {
-      process.stderr.write('Bearer authentication enabled for SSE endpoints\n');
-    } else {
-      process.stderr.write('Bearer authentication disabled - endpoints are public\n');
-    }
-
     // Per-connection maps for legacy SSE and streamable HTTP
     const legacySseConnections = new Map<string, { server: Server; transport: SSEServerTransport }>();
     const streamableSessions = new Map<string, { server: Server; transport: StreamableHTTPServerTransport }>();
@@ -204,11 +150,11 @@ async function main(): Promise<void> {
       });
     };
 
-    app.get('/sse', bearerAuth, handleLegacySse);
+    app.get('/sse', handleLegacySse);
 
     const streamablePaths = ['/', '/mcp'];
 
-    app.all(streamablePaths, bearerAuth, async (req: Request, res: Response) => {
+    app.all(streamablePaths, async (req: Request, res: Response) => {
       const sessionHeader = parseSessionHeader(req.headers['mcp-session-id']);
       if (req.method === 'GET' && !sessionHeader && req.headers.accept?.includes('text/event-stream')) {
         handleLegacySse(req, res);
@@ -290,7 +236,7 @@ async function main(): Promise<void> {
       }
     });
 
-    app.post('/messages', bearerAuth, async (req: Request, res: Response) => {
+    app.post('/messages', async (req: Request, res: Response) => {
       const connectionId = req.query.connectionId as string | undefined;
       const conn = connectionId ? legacySseConnections.get(connectionId) : undefined;
       if (conn) {
